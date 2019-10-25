@@ -1,0 +1,394 @@
+#! /bin/bash
+
+COMP_PATH=${PROJ_ROOT_PATH:-"/home/rain/workspace/cpe-build"}
+
+# Just for Aricent ISS
+function Sync_ISS()
+{
+	#local SWITCH_CUS="$PROJ_ROOT_PATH/core/code/customer/$CUSTOMER_FOLDER "
+	local SWITCH_CUS="$PROJ_ROOT_PATH/core/code/customer"
+	local SWITCH_FUT="$PROJ_ROOT_PATH/core/code/future"
+	local SWITCH_SDK="$PROJ_ROOT_PATH/sdk/sdk_rtk_switch/rtk-sdk"
+	local SWITCH_SRCDIRS="$SWITCH_CUS $SWITCH_FUT $SWITCH_SDK"
+	#for TW switch project
+	#local SWITCH_SRCDIRS="$PROJ_ROOT_PATH/sdk/sdk-xgs-robo-6.3.12 $PROJ_ROOT_PATH/core/code/future"
+
+	if [ "$1" = "b" ] || [ "$1" = "-b" ]; then
+		find $SWITCH_CUS -name "*.js" > cscope.files
+		find $SWITCH_CUS -name "*.lua" >> cscope.files
+		find $SWITCH_CUS -name "*.[ch]" >> cscope.files
+		find \
+			$SWITCH_FUT/inc \
+			$SWITCH_FUT/npapi \
+			$SWITCH_FUT/cmdebug \
+			$SWITCH_FUT/syslog \
+			$SWITCH_FUT/lldp \
+			$SWITCH_FUT/fm \
+			$SWITCH_FUT/tftp \
+			$SWITCH_FUT/cfa2 \
+			$SWITCH_FUT/cmdosprev \
+			$SWITCH_FUT/fips \
+			$SWITCH_FUT/sntp \
+			$SWITCH_FUT/arp \
+			$SWITCH_FUT/cmfdbshadow \
+			$SWITCH_FUT/snooping \
+			$SWITCH_FUT/cmguestvlan \
+			$SWITCH_FUT/radius \
+			$SWITCH_FUT/qosxtd \
+			$SWITCH_FUT/cmfileoperation \
+			$SWITCH_FUT/cmmcastfilter \
+			$SWITCH_FUT/pnac \
+			$SWITCH_FUT/cmfastping \
+			$SWITCH_FUT/cmeee \
+			$SWITCH_FUT/cmnvram \
+			$SWITCH_FUT/LR \
+			$SWITCH_FUT/rmon \
+			$SWITCH_FUT/cmcdptestmode \
+			$SWITCH_FUT/cmdac \
+			$SWITCH_FUT/vcm \
+			$SWITCH_FUT/cmbulk \
+			$SWITCH_FUT/util/trie \
+			$SWITCH_FUT/util/dump \
+			$SWITCH_FUT/util/aes \
+			$SWITCH_FUT/util/md5 \
+			$SWITCH_FUT/util/sha1 \
+			$SWITCH_FUT/util/trie2 \
+			$SWITCH_FUT/util/des \
+			$SWITCH_FUT/util/cmn \
+			$SWITCH_FUT/util/sha2 \
+			$SWITCH_FUT/util/utf8 \
+			$SWITCH_FUT/util/hmac \
+			$SWITCH_FUT/npapi/cust_ln \
+			$SWITCH_FUT/stp/mstp \
+			$SWITCH_FUT/stp/rstp \
+			$SWITCH_FUT/cmarch \
+			$SWITCH_FUT/netip \
+			$SWITCH_FUT/cmassignment \
+			$SWITCH_FUT/cmlbd \
+			$SWITCH_FUT/cli \
+			$SWITCH_FUT/cmcdp \
+			$SWITCH_FUT/la \
+			$SWITCH_FUT/cmcpad \
+			$SWITCH_FUT/ISS/common/msr \
+			$SWITCH_FUT/ISS/common/customer/eoid \
+			$SWITCH_FUT/ISS/common/cmrpc/engine \
+			$SWITCH_FUT/ISS/common/cmrpc/clom \
+			$SWITCH_FUT/ISS/common/cmlog \
+			$SWITCH_FUT/ISS/common/system \
+			$SWITCH_FUT/ISS/common/tool/msrscan \
+			$SWITCH_FUT/ISS/common/csmme \
+			$SWITCH_FUT/ISS/common/web \
+			$SWITCH_FUT/ISS/common/cmes \
+			$SWITCH_FUT/ISS/others \
+			$SWITCH_FUT/cmipif \
+			$SWITCH_FUT/tacacs \
+			$SWITCH_FUT/netip6/ip6mgmt \
+			$SWITCH_FUT/netip6/fsip6 \
+			$SWITCH_FUT/netip6/rtm6 \
+			$SWITCH_FUT/cmmirror \
+			$SWITCH_FUT/dhcp/dhcpclient \
+			$SWITCH_FUT/dns \
+			$SWITCH_FUT/fpam \
+			$SWITCH_FUT/cmportiso \
+			$SWITCH_FUT/cmvct \
+			$SWITCH_FUT/l2dhcsnp \
+			$SWITCH_FUT/dhcp6/dhcp6clnt \
+			$SWITCH_FUT/l2iwf \
+			$SWITCH_FUT/cmdstmacfilter \
+			$SWITCH_FUT/clkiwf \
+			$SWITCH_FUT/cmaac \
+			$SWITCH_FUT/cmfrmfwdctrl \
+			$SWITCH_FUT/cmpf2 \
+			$SWITCH_FUT/cmstatistics \
+			$SWITCH_FUT/vlangarp/garp \
+			$SWITCH_FUT/vlangarp/vlan \
+			$SWITCH_FUT/cmvoicevlan \
+			$SWITCH_FUT/netipvx \
+			$SWITCH_FUT/ssl \
+			$SWITCH_FUT/cmpoe \
+			$SWITCH_FUT/fsap2/cmn \
+			$SWITCH_FUT/fsap2/pthreads \
+			$SWITCH_FUT/snmpv3 \
+			-type f -a \
+			-name "*.[ch]" >> cscope.files
+		find $SWITCH_SDK -name "*.[ch]" >> cscope.files
+
+		sed -i "/\<future.inc.bcm.h\>/d"        cscope.files
+		sed -i "/\<future.inc.bcmchass.h\>/d"   cscope.files
+		sed -i "/\<future.inc.cxe2130.h\>/d"    cscope.files
+		sed -i "/\<future.inc.dx260.h\>/d"      cscope.files
+		sed -i "/\<future.inc.dx285.h\>/d"      cscope.files
+		sed -i "/\<future.inc.dx5128.h\>/d"     cscope.files
+		sed -i "/\<future.inc.ezchip.h\>/d"     cscope.files
+		sed -i "/\<future.inc.fulcrum.h\>/d"    cscope.files
+		sed -i "/\<future.inc.isslnx.h\>/d"     cscope.files
+		sed -i "/\<future.inc.isslnxme.h\>/d"   cscope.files
+		sed -i "/\<future.inc.lion.h\>/d"       cscope.files
+		sed -i "/\<future.inc.mrvlls.h\>/d"     cscope.files
+		sed -i "/\<future.inc.music.h\>/d"      cscope.files
+		sed -i "/\<future.inc.npsiminc.h\>/d"   cscope.files
+		sed -i "/\<future.inc.petra.h\>/d"      cscope.files
+		# sed -i "/\<future.inc.rtk.h\>/d"        cscope.files
+		sed -i "/\<future.inc.rtl8328.h\>/d"    cscope.files
+		sed -i "/\<future.inc.wintegra.h\>/d"   cscope.files
+		sed -i "/\<future.inc.xcat.h\>/d"       cscope.files
+
+		cscope -bkq -i cscope.files
+		ctags -R --links=no --c++-kinds=+p --fields=+iaS --extra=+q $SWITCH_SRCDIRS
+	elif [ "$1" = "bcm" ] || [ "$1" = "-bcm" ]; then
+		SWITCH_SDK="$PROJ_ROOT_PATH/sdk/sdk_bcm_switch/sdk-xgs-robo"
+		SWITCH_SRCDIRS="$SWITCH_CUS $SWITCH_FUT $SWITCH_SDK"
+
+		find $SWITCH_CUS -name "*.js" > cscope.files
+		find $SWITCH_CUS -name "*.lua" >> cscope.files
+		#find $SWITCH_SRCDIRS -name "*.[ch]" -o -name "*.cpp" >> cscope.files
+		find $SWITCH_SRCDIRS \
+			-path "$SWITCH_FUT/fsap2/*" ! -path "$SWITCH_FUT/fsap2/cmn*" ! -path "$SWITCH_FUT/fsap2/pthreads*" -prune -o \
+			-path "$SWITCH_FUT/ISS/*" ! -path "$SWITCH_FUT/ISS/common*" ! -path "$SWITCH_FUT/ISS/others*" -prune -o \
+			-path "$SWITCH_FUT/npapi" -prune -o \
+			-type f -a \
+			-name "*.[ch]" -print >> cscope.files
+
+		sed -i "/\<future.poe\>/d"              cscope.files
+		sed -i "/\<vxworks\>/d"                 cscope.files
+		sed -i "/\<sim\>/d"                     cscope.files
+		sed -i "/\<src.sal.appl.linux\>/d"      cscope.files
+		sed -i "/\<systems.linux.kernel.modules.bcm\>/d"      cscope.files
+		sed -i "/\<systems.linux.kernel.modules.knet-cb\>/d"  cscope.files
+		sed -i "/\<systems.linux.kernel.modules.uk-proxy\>/d" cscope.files
+
+		cscope -bkq -i cscope.files
+		ctags -R --links=no --c++-kinds=+p --fields=+iaS --extra=+q $SWITCH_SRCDIRS
+	elif [ "$1" = "rtk" ] || [ "$1" = "-rtk" ]; then
+		find $SWITCH_CUS -name "*.js" > cscope.files
+		find $SWITCH_CUS -name "*.lua" >> cscope.files
+		find $SWITCH_SRCDIRS \
+			-path "$SWITCH_FUT/fsap2/*" ! -path "$SWITCH_FUT/fsap2/cmn*" ! -path "$SWITCH_FUT/fsap2/pthreads*" -prune -o \
+			-path "$SWITCH_FUT/ISS/*" ! -path "$SWITCH_FUT/ISS/common*" ! -path "$SWITCH_FUT/ISS/others*" -prune -o \
+			-path "$SWITCH_FUT/npapi" -prune -o \
+			-path "$SWITCH_SDK/config/*" ! -path "$SWITCH_SDK/config/autoconf.h" -prune -o \
+			-path "$SWITCH_SDK/system/linux/linux-2.6.32.x" -prune -o \
+			-type f -a \
+			-name "*.[ch]" -print >> cscope.files
+
+		sed -i "/\<future.inc.bcm.h\>/d"        cscope.files
+		sed -i "/\<future.inc.bcmchass.h\>/d"   cscope.files
+		sed -i "/\<future.inc.cxe2130.h\>/d"    cscope.files
+		sed -i "/\<future.inc.dx260.h\>/d"      cscope.files
+		sed -i "/\<future.inc.dx285.h\>/d"      cscope.files
+		sed -i "/\<future.inc.dx5128.h\>/d"     cscope.files
+		sed -i "/\<future.inc.ezchip.h\>/d"     cscope.files
+		sed -i "/\<future.inc.fulcrum.h\>/d"    cscope.files
+		sed -i "/\<future.inc.isslnx.h\>/d"     cscope.files
+		sed -i "/\<future.inc.isslnxme.h\>/d"   cscope.files
+		sed -i "/\<future.inc.lion.h\>/d"       cscope.files
+		sed -i "/\<future.inc.mrvlls.h\>/d"     cscope.files
+		sed -i "/\<future.inc.music.h\>/d"      cscope.files
+		sed -i "/\<future.inc.npsiminc.h\>/d"   cscope.files
+		sed -i "/\<future.inc.petra.h\>/d"      cscope.files
+		# sed -i "/\<future.inc.rtk.h\>/d"        cscope.files
+		sed -i "/\<future.inc.rtl8328.h\>/d"    cscope.files
+		sed -i "/\<future.inc.wintegra.h\>/d"   cscope.files
+		sed -i "/\<future.inc.xcat.h\>/d"       cscope.files
+
+		cscope -bkq -i cscope.files
+		ctags -R --links=no --c++-kinds=+p --fields=+iaS --extra=+q $SWITCH_SRCDIRS
+	elif [ "$1" = "c" ] || [ "$1" = "-c" ]; then
+		rm -f cscope.files cscope.in.out cscope.out cscope.po.out tags
+	else
+		echo -e $FG_YELLOW
+		echo -e "Usage: Sync [OPTION]"
+		echo -e $FG_GREEN
+		echo -e "\t-b       build the cross-reference"
+		echo -e "\t-c       clear the cross-reference"
+		echo -e $F6_END
+	fi
+}
+
+# Just for Aricent ISS(Original)
+function Sync_ISS2()
+{
+	if [ "$1" = "b" ] || [ "$1" = "-b" ]; then
+		find . -name "*.[ch]" -o -name "*.cpp" >> cscope.files
+		find . \
+			-path "./fsap2/*" ! -path "./fsap2/cmn*" ! -path "./fsap2/pthreads*" -prune -o \
+			-path "./ISS/*" ! -path "./ISS/common*" ! -path "./ISS/others*"-prune -o \
+			-path "./npapi" -prune -o \
+			-name "*.[ch]" -print >> cscope.files
+
+		cscope -bkq -i cscope.files
+		ctags -R --links=yes --c++-kinds=+p --fields=+iaS --extra=+q .
+	elif [ "$1" = "c" ] || [ "$1" = "-c" ]; then
+		rm -f cscope.files cscope.in.out cscope.out cscope.po.out tags
+	else
+		echo -e $FG_YELLOW
+		echo -e "Usage: Sync [OPTION]"
+		echo -e $FG_GREEN
+		echo -e "\t-b       build the cross-reference"
+		echo -e "\t-c       clear the cross-reference"
+		echo -e $F6_END
+	fi
+}
+
+# for realtek router project
+function make_router()
+{
+	case $1 in
+		"" )
+			cd ${COMP_PATH}; make remake_rootfs_img_only;
+			;;
+		k | kk | K | kernel )
+			# cd ${COMP_PATH}; make linux-2.6.x.rtl_all || exit 1
+			# cd ${COMP_PATH}; make linux-2.6.x_all || exit 1
+			cd ${COMP_PATH}; make linux-2.6.x_all image || exit 1
+			cp -fav core/sdk/linux-2.6.x/vm.img /tftpboot/kernel_fs.img
+			;;
+		w | www )
+			cd ${COMP_PATH}; make romfs_customize;
+			;;
+		tr )
+			cd ${COMP_PATH}; make clean_openagent all_openagent romfs_openagent;
+			;;
+		ds )
+			cd ${COMP_PATH}; make all_datastore;
+			;;
+		ids )
+			cd ${COMP_PATH}; make romfs_datastore;
+			;;
+		all )
+			cd ${COMP_PATH}; make;
+			;;
+		fw )
+			cd ${COMP_PATH}; make remake_rootfs_img_only;
+			;;
+		romfs )
+			cd ${COMP_PATH}; make romfs;
+			;;
+		install )
+			cd ${COMP_PATH}; make install;
+			;;
+		clean )
+			cd ${COMP_PATH}; make clean;
+			;;
+		* )
+			cd ${COMP_PATH}; make all_$1;
+			;;
+	esac
+}
+
+# for aricent switch project
+function make_switch()
+{
+	case $1 in
+		"" )
+			cd ${COMP_PATH}; make again || exit 1
+			cd ${COMP_PATH}; cp -fav image/squashfs.vc /tftpboot
+			;;
+		all )
+			if [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_iProcLDK" ] ;then
+				cd ${COMP_PATH}; make all || exit 1
+			elif [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_RTK_MIPS" ] ; then
+				cd ${COMP_PATH}; make all sfw || exit 1
+			fi
+			cd ${COMP_PATH}; cp -fav image/*PRECODE.bin /tftpboot/precode.bin
+			cd ${COMP_PATH}; cp -fav image/uImage.vc /tftpboot
+			cd ${COMP_PATH}; cp -fav image/squashfs.vc /tftpboot
+			;;
+		a | A | again )
+			cd ${COMP_PATH}; make again || exit 1
+			cd ${COMP_PATH}; cp -fav image/squashfs.vc /tftpboot
+			;;
+		b | B | boot )
+			cd ${COMP_PATH}; make boot bimage || exit 1
+			if [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_iProcLDK" ] ;then
+				cd ${COMP_PATH}; cp -fav image/bimage /tftpboot
+			elif [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_RTK_MIPS" ] ; then
+				cd ${COMP_PATH}; cp -fav image/boot.bin /tftpboot
+			fi
+			;;
+		c | C | core )
+			cd ${COMP_PATH}; make core
+			;;
+		k | kk | K | kernel )
+			cd ${COMP_PATH}; make os os-attach-version-checksum || exit 1
+			cd ${COMP_PATH}; cp -fav image/uImage.vc /tftpboot
+			;;
+		w | W | www )
+			cd ${COMP_PATH}; make html-clean again || exit 1
+			#cd ${COMP_PATH}; make -C core/code/future/webnm clean; make again || exit 1
+			cd ${COMP_PATH}; cp -fav image/squashfs.vc /tftpboot
+			;;
+		r | R| rootfs )
+			cd ${COMP_PATH}; make squashfs-attach-version-checksum || exit 1
+			cd ${COMP_PATH}; cp -fav image/squashfs.vc /tftpboot
+			;;
+		s | S| sdk )
+			cd ${COMP_PATH}; make sdk || exit 1
+			;;
+		sfw )
+			cd ${COMP_PATH}; make sfw || exit 1
+			cd ${COMP_PATH}; cp -fav image/squashfs.vc /tftpboot
+			cd ${COMP_PATH}; cp -fav image/uImage.vc /tftpboot
+			;;
+		t | T | tags )
+			cd $PROJ_ROOT_PATH
+			if [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_iProcLDK" ] ; then
+				Sync_ISS c
+				Sync_ISS bcm
+			elif [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_RTK_MIPS" ] ; then
+				Sync_ISS c
+				Sync_ISS rtk
+			fi
+			cd -
+			;;
+		tf ) # generate tags fastly for realtek switch.
+			cd $PROJ_ROOT_PATH
+			Sync_ISS c
+			Sync_ISS b
+			cd -
+			;;
+		t2 | tags2 )
+			Sync_ISS2 c
+			Sync_ISS2 b
+			cd -
+			;;
+		* )
+			echo "No current compile option is met!"
+			cd ${COMP_PATH}; make $1;
+			;;
+	esac
+}
+
+
+##################################################
+# Main
+##################################################
+
+function do_make()
+{
+	local make_tool="$1"
+	shift 1
+
+	if [ "$#" -eq "0" ]; then
+		$make_tool
+	else
+		while [ "$#" -gt "0" ]
+		do
+			$make_tool $1
+			if [ "$?" -ne "0" ];then
+				break
+			else
+				shift 1
+			fi
+		done
+	fi
+}
+
+if [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_iProcLDK" ] || [ "${ENV_PROJ_TYPE}" = "EPT_SWITCH_RTK_MIPS" ] ; then
+	time do_make make_switch "$@"
+else
+	time do_make make_router "$@"
+fi
+
+echo -e "\033[032mMake Path: ${COMP_PATH}\033[0m"
+exit 0;

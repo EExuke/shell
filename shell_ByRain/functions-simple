@@ -1,0 +1,360 @@
+#!/bin/bash
+###########################################################################
+# This shell libarary gathers any useful tools to improve labor efficiency!
+###########################################################################
+
+#-----------------------------------------------------------
+#                COLOUR VARIABLES
+#-----------------------------------------------------------
+UNDERLINE="\033[4m"
+FG_BLACK="\033[30m"
+FG_RED="\033[31m"
+FG_GREEN="\033[32m"
+FG_YELLOW="\033[33m"
+FG_BLUE="\033[34m"
+FG_PURPLE="\033[35m"
+FG_DARKGREEN="\033[36m"
+FG_WHITE="\033[37m"
+BG_BLACK="\033[40m"
+BG_RED="\033[41m"
+BG_GREEN="\033[42m"
+BG_YELLOW="\033[43m"
+BG_BLUE="\033[44m"
+BG_PURPLE="\033[45m"
+BG_DARKGREEN="\033[46m"
+BG_WHITE="\033[47m"
+F6_END="\033[0m"
+
+#-----------------------------------------------------------
+#                SHELL TOOLS
+#-----------------------------------------------------------
+
+# Sync: synchronize cscope tags and ctags
+function Sync()
+{
+	if [ "$1" = "b" ] || [ "$1" = "-b" ]; then
+		find -L . -name "*.h" -o -name "*.c" -o -name "*.cpp" -o -name "*.lua" > cscope.files
+		cscope -bk -i cscope.files
+		ctags -R --links=yes --c++-kinds=+p --fields=+iaS --extra=+q .
+		#ctags -R --links=yes
+	elif [ "$1" = "c" ] || [ "$1" = "-c" ]; then
+		rm -f cscope.files cscope.in.out cscope.out cscope.po.out tags
+	else
+		echo -e $FG_YELLOW
+		echo -e "Usage: Sync [OPTION]"
+		echo -e $FG_GREEN
+		echo -e "\t-b       build the cross-reference"
+		echo -e "\t-c       clear the cross-reference"
+		echo -e $F6_END
+	fi
+}
+
+# static: export project root path
+function dir_export()
+{
+	case $# in
+		1 )
+			# export project root directory
+			export PROJ_ROOT_PATH=$1
+			# export project customer directory
+			eval $(grep "export CUSTOMER_FOLDER" $PROJ_ROOT_PATH/build.env)
+			;;
+		2 )
+			if [ -d "$1" ]; then
+				export PROJ_ROOT_PATH=$1
+				eval $(grep "export CUSTOMER_FOLDER" $PROJ_ROOT_PATH/build.env)
+
+				# create a link 'cpe-build' to current project in place.
+				ln -sfn $PROJ_ROOT_PATH $(dirname $PROJ_ROOT_PATH)/cpe-build
+			fi
+			;;
+		* )
+			;;
+	esac
+
+	echo -ne "$FG_DARKGREEN"
+	echo -ne "$PROJ_ROOT_PATH"
+	echo -e  "$F6_END"
+}
+
+# static: decide project path
+function dir_decide()
+{
+	local GENERIC_PROJECT=cpe-build
+
+	case $1 in
+		"" )
+			;;
+		1 )
+			dir_export ~/workspace/$GENERIC_PROJECT
+			;;
+		2 )
+			dir_export ~/workroom/$GENERIC_PROJECT
+			;;
+		* )
+			dir_export "$(dirname $PROJ_ROOT_PATH)/$1" "$(dirname $PROJ_ROOT_PATH)/$GENERIC_PROJECT"
+			;;
+	esac
+}
+
+# print or set project root path
+function dir()
+{
+	if [ $# = 0 ]; then
+
+		echo "Please choose main directory:"
+		echo "  1: ~/workspace/cpe-build"
+		echo "  2: ~/workroom/cpe-build"
+		echo "Anykey other key to give up!!!"
+		echo ""
+
+		read -n 1 -p "which one: " op
+		if [ "$op" == "" ]; then
+			echo -ne "proj path:"
+			echo -ne "$FG_DARKGREEN"
+			echo -ne "$PROJ_ROOT_PATH"
+			echo -e  "$F6_END"
+		else
+			echo -e "\nyou choosed the option-${FG_PURPLE}$op${F6_END}!\n";
+			dir_decide "$op"
+		fi
+
+	else
+		dir_decide "$@"
+	fi
+}
+
+##################################################
+# $1 - new dir
+# $2 - old dir
+##################################################
+function try_cd()
+{
+	local _1_=$PROJ_ROOT_PATH/$1
+	local _2_=$PROJ_ROOT_PATH/$2
+
+	if [ -d "$_1_" ]; then
+		echo -e $FG_YELLOW$(dirname $PROJ_ROOT_PATH)/$F6_END$BG_YELLOW$(basename $PROJ_ROOT_PATH)$F6_END$FG_YELLOW/$1$F6_END;cd $_1_
+	elif [ -d "$_2_" ]; then
+		echo -e $FG_YELLOW$(dirname $PROJ_ROOT_PATH)/$F6_END$BG_YELLOW$(basename $PROJ_ROOT_PATH)$F6_END$FG_YELLOW/$2$F6_END;cd $_2_
+	else
+		echo -ne "$FG_RED"
+		echo -ne "No Such Dir!"
+		echo -e  "$F6_END"
+	fi
+}
+
+function choose_git_server()
+{
+	case $1 in
+		1|so|soarnex )
+			# switch from soarnex git server
+			echo -ne "$FG_RED$BG_WHITE"
+			echo -ne "set git server to soarnex 172.22.102.205 "
+			echo -e  "$F6_END"
+			sed -i -e "12cuser cameo_git" ~/.ssh/config
+			sed -i -e "13chostname 172.22.102.205" ~/.ssh/config
+			;;
+		2|tmp )
+			# switch from temporary git server
+			echo -ne "$FG_RED$BG_WHITE"
+			echo -ne "set git server to tmp 172.22.102.73 "
+			echo -e  "$F6_END"
+			sed -i -e "12cuser git" ~/.ssh/config
+			sed -i -e "13chostname 172.22.102.73" ~/.ssh/config
+			;;
+		* )
+			cat ~/.ssh/config
+			;;
+	esac
+}
+
+# change directory
+function sw()
+{
+	if [ "$PROJ_ROOT_PATH" = "" ];then
+		echo "Please give the main directory first!"
+		return 0
+	fi
+
+	case $1 in
+		- )
+			cd -
+			;;
+		"" )
+			try_cd
+			;;
+		b|boot )
+			try_cd boot/uboot_bcm_switch/uboot boot/uboot_rtk_switch/u-boot-2011.12
+			;;
+		k|kk )
+			try_cd os/os_bcm_switch/kernel/linux-3.6.5 os/os_rtk_uClinux_switch/uClinux/linux-2.6.x
+			;;
+		a|arch )
+			try_cd os/os_bcm_switch/kernel/linux-3.6.5/arch/arm/mach-iproc
+			;;
+		c|cus )
+			try_cd core/code/customer/${CUSTOMER_FOLDER}
+			;;
+		w|www )
+			try_cd core/code/customer/${CUSTOMER_FOLDER}/htmlpages
+			;;
+		n|np )
+			try_cd core/code/customer/${CUSTOMER_FOLDER}/npapi
+			;;
+		f|fu )
+			try_cd core/code/future
+			;;
+		i )
+			try_cd core/code/customer/${CUSTOMER_FOLDER}/inc
+			;;
+		I|inc|include )
+			try_cd core/code/future/inc
+			;;
+		is|iss|ISS )
+			try_cd core/code/future/ISS
+			;;
+		co|common )
+			try_cd core/code/future/ISS/common
+			;;
+		msr )
+			try_cd core/code/future/ISS/common/msr
+			;;
+		l )
+			try_cd core/code/customer/${CUSTOMER_FOLDER}/LR
+			;;
+		L|lr )
+			try_cd core/code/future/LR
+			;;
+		m|mib )
+			try_cd core/code/customer/${CUSTOMER_FOLDER}/mibs
+			;;
+		M|Mib )
+			try_cd core/code/future/mibs
+			;;
+		o|opensource)
+			try_cd core/code/opensource
+			;;
+		rpc )
+			try_cd core/code/future/ISS/common/cmrpc
+			;;
+		s|sdk )
+			try_cd sdk/sdk_bcm_switch/sdk-xgs-robo sdk/sdk_rtk_switch/rtk-sdk
+			;;
+		r|rootfs )
+			try_cd target/rootfs
+			;;
+		e|erps )
+			try_cd core/code/future/erps
+			;;
+		6|6.6.0)
+			exe_cd /home/rain/Public/_AricentIss/Release/6.6.0/code
+			;;
+		12|6.12.6)
+			exe_cd /home/rain/Public/_AricentIss/Release/6.12.6/code
+			;;
+		13|6.13.0)
+			exe_cd /home/rain/Public/_AricentIss/Release/6.13.0/code
+			;;
+		14|6.14.0)
+			exe_cd /home/rain/Public/_AricentIss/Release/6.14.0/code
+			;;
+		2|7.2.0)
+			exe_cd /home/rain/Public/_AricentIss/Release/7.2.0/code
+			;;
+		3|7.3.0)
+			exe_cd /home/rain/Public/_AricentIss/Release/7.3.0/code
+			;;
+		4|8.3.0)
+			exe_cd /home/rain/Public/_AricentIss/Release/8.3.0/code
+			;;
+		lo)
+			choose_git_server local
+			;;
+		re)
+			choose_git_server remote
+			;;
+		so)
+			choose_git_server soarnex
+			;;
+		va)
+			sh ~/.vim_runtime/install_awesome_vimrc.sh
+			;;
+		vr)
+			~/.vim_rain/install.sh
+			;;
+		vn)
+			rm -fv ~/.vimrc
+			;;
+		'?' | h | help )
+			vi ~/bin/functions-simple +/"function sw"
+			;;
+		* )
+			cd "$1"
+			;;
+	esac
+
+	return $?
+}
+
+function config()
+{
+	make menuconfig
+}
+
+function p()
+{
+	if [ $# -eq "0" ]; then
+		ping www.sohu.com
+	else
+		ping $*
+	fi
+}
+
+function p6()
+{
+	ping6 $*
+}
+
+function f()
+{
+	if [ $# = 1 ]; then
+		find `pwd` -name "$1"
+	fi
+
+	if [ $# = 2 ]; then
+		find "$1" -name "$2"
+	fi
+}
+
+function g()
+{
+	if [ $# = 1 ]; then
+		grep -IRns -- "\<$1\>" *
+	fi
+
+	if [ $# = 2 ]; then
+		grep -IRns -- "\<$1\>" "$2"
+	fi
+}
+
+function gi()
+{
+	if [ $# = 1 ]; then
+		grep -IiRns -- "$1" *
+	fi
+
+	if [ $# = 2 ]; then
+		grep -IiRns -- "$1" "$2"
+	fi
+}
+
+function clone()
+{
+	if [ -n "$1" ]; then
+		git clone cameo_git:bs_super "$1"
+	else
+		git clone cameo_git:bs_supe
+	fi
+}
+
