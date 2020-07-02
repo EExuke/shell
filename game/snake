@@ -1,0 +1,309 @@
+#!/usr/bin/env bash
+# File: snake.sh
+# Description: snake game implemented by bash
+# Author: StableGenius
+# Date: 2020-03-06
+
+############ 定义常亮 ########
+# 游戏版本
+VERSION="0.1"
+# 作者姓名
+AUTHOR="StableGenius"
+
+# 清空格式符
+NO_FORMAT="\e[0m"
+# 游戏边界颜色(红色)
+BORDER_COLOR="\e[41m"
+# 食物的颜色（绿色）
+FOOD_COLOR="\e[42m"
+# 蛇头的颜色（黄色）
+SNAKE_HEAD="\e[43m"
+# 蛇身的颜色（蓝色）
+SNAKE_BODY="\e[44m"
+
+# 游戏开始时，蛇的长度
+INIT_LEN=3
+# 游戏速度（刷新屏幕的间隔）
+SPEED=0.1
+
+# 游戏状态（bash的函数只能返回正整数，使用这样的标识符会让代码更好看一点）
+HIT_WALL=100 #撞墙死了
+EAT_FOOD=101 #吃到了食物
+EAT_SELF=102 #咬到了自己
+
+# 游戏初始分值
+INIT_SCORE=0
+# 吃到食物增加的分值
+INC_SCORE=1
+
+################ 游戏当中要用到的变量 ############
+# 使用两个数组来描述一条蛇，数组的内容是蛇身所在的第几行和第几列
+declare -a snakeline
+declare -a snakecol
+
+# 使用两个变量记录食物的坐标
+declare -i food_col
+declare -i food_line
+
+# 游戏窗口的长和宽
+declare -i window_height
+declare -i window_length
+
+# 蛇的移动方向
+direction=left # 游戏刚开始的时候，移动方向是向左的
+
+# 禁用Ctrl+C退出游戏
+trap "" SIGINT
+
+# 初始化游戏参数
+function init_game(){
+    # 开始新游戏前清空屏幕
+    clear
+
+    # 不显示光标(不同的终端可能会有不同的表现，我的Windows Terminal不好使，PowerShell和cmd.exe都表现得非常好)
+    echo -ne "\e[?25l"
+
+    # 敲在键盘上面的按键不会显示在屏幕上 
+    stty -echo
+
+    # 设置游戏面板的长宽，最后一行当做计分板
+    window_length=$(($(tput cols)/2*2)) # 窗口的宽度须是偶数(bash只有整除，先除二再乘二必然得到一个偶数)
+    window_height=$(($(tput lines)-1))
+
+    # 蛇头显然是在数组的第一个元素处
+    snakecol[0]=$((window_length/2/2*2+1))  #确保蛇头所在的列为奇数
+    snakeline[0]=$((window_height/2))
+
+    # 根据设定好的蛇长度计算其他蛇身坐标
+    # 默认蛇一开始是 0xx 0是蛇头，x是蛇身
+    for ((i=1;i<$INIT_LEN;i++)); do
+        snakecol[$i]=$((${snakecol[$((i-1))]}+2))
+        snakeline[$i]=${snakeline[0]}
+    done 
+}
+
+# 辅助函数，使用坐标在屏幕上面绘制内容
+function draw(){
+    if [[ $# -ne 3 ]] ; then
+        echo "错误地使用了辅助绘图函数"
+        exit 255
+    fi
+    # :param line: 绘制在第几行
+    local line=$1
+    # :param col: 绘制在第几列
+    local col=$2
+    # :param content: 需要绘制的内容
+    local content=$3
+    # 不管怎么样最后都把格式置空
+    echo -ne "\e[$line;${col}H$content$NO_FORMAT"
+}
+
+# 画出界面的边界
+function draw_border(){
+    # 首先画出界面的上下两条边界
+    for ((i=1;i<=window_length;i+=2)); do
+        draw 1 $i "$BORDER_COLOR  "
+        draw $window_height $i "$BORDER_COLOR  "
+    done
+
+    # 然后画出界面的左右两条边界
+    for ((i=1;i<=window_height;i++)); do
+        draw $i 1 "$BORDER_COLOR  "
+        draw $i $((window_length-1)) "$BORDER_COLOR  "
+    done
+
+    # 打印游戏版本信息
+    ## 首先居中打印游戏名称
+    draw $((window_height+1)) $((window_length/2-15)) "Bash版贪吃蛇 version $VERSION"
+
+    ## 然后打印游戏作者（如果窗口长度不够后者会覆盖前者，作者的姓名肯定更重要嘛）
+    draw $((window_height+1)) $((window_length-20)) "作者: $AUTHOR"
+}
+
+# 绘制蛇
+function draw_snake(){
+    # 蛇头有专门的标记
+    draw ${snakeline[0]} ${snakecol[0]} "$SNAKE_HEAD  "
+
+    # 绘制蛇身
+    local index=1
+    while [[ -n ${snakeline[$index]} ]] ; do
+        draw  ${snakeline[$index]} ${snakecol[$index]} "$SNAKE_BODY  "
+        ((index++))
+    done
+}
+
+# 蛇需要移动起来
+function snake_move(){
+    # 蛇的移动需要分解为三步
+    
+    ## 擦除最后一节蛇身
+    local snake_len=$((${#snakeline[@]}-1)) # 蛇身长度
+    # 记录蛇尾坐标，如果吃到食物了，蛇身就要变长了
+    local tail_col=${snakecol[$snake_len]}
+    local tail_line=${snakeline[$snake_len]}
+    draw $tail_line $tail_col  "  " # 绘制两个空格删除蛇尾
+
+    ## 原先的蛇头变成蛇身的一部分
+    draw ${snakeline[0]} ${snakecol[0]} "$SNAKE_BODY  " # 蛇头变蛇身
+
+    # 蛇的数组要发生一些变化——蛇后面的坐标变成前面一位的坐标
+    for ((index=snake_len;index>0;index--)); do
+        snakecol[$index]=${snakecol[$((index-1))]}
+        snakeline[$index]=${snakeline[$((index-1))]}
+    done
+
+    ## 在前进方向上生成新的蛇头
+    case $direction in
+        left)
+            snakecol[0]=$((${snakecol[0]}-2))
+            ;;
+        right)
+            snakecol[0]=$((${snakecol[0]}+2))
+            ;;
+        up)
+            snakeline[0]=$((${snakeline[0]}-1))
+            ;;
+        down)
+            snakeline[0]=$((${snakeline[0]}+1)) 
+            ;;
+    esac
+
+    # 查看蛇移动过后的状态
+    local head_col=${snakecol[0]}
+    local head_line=${snakeline[0]}
+
+    # 是不是撞墙了？
+    if [[ $head_col -eq 1 ]] || [[ $head_col -eq $((window_length-1)) ]] || [[ $head_line -eq 1 ]] || [[ $head_line -eq $window_height ]] ; then
+        return $HIT_WALL
+    fi
+
+    # 有没有咬到自己
+    local index=1
+    while [[ -n ${snakecol[$index]} ]] ; do
+        if [[ ${snakecol[$index]} -eq $head_col ]] && [[ ${snakeline[$index]} -eq $head_line ]] ; then
+            return $EAT_SELF   
+        fi
+        ((index++))
+    done
+
+    # 没死就要重新绘制蛇头
+    draw ${snakeline[0]} ${snakecol[0]} "$SNAKE_HEAD  "
+
+    # 有没有吃到食物
+    if [[ $food_col -eq $head_col ]] && [[ $food_line -eq $head_line ]] ; then
+        # 蛇身要增加1
+        snakecol[$((snake_len+1))]=$tail_col
+        snakeline[$((snake_len+1))]=$tail_line
+
+        # 绘制一下被擦掉的蛇尾
+        draw $tail_line $tail_col "$SNAKE_BODY  "
+        return $EAT_FOOD
+    fi
+}
+
+# 随机生成食物坐标，并进行绘制
+function random_food(){
+    # 必须确保食物坐标不落在蛇身上
+    while true; do
+        food_col=$(($RANDOM%$((window_length-4))/2*2+3)) # 确保食物坐标为奇数
+        food_line=$(($RANDOM%$((window_height-2))+2))
+
+        local flag=1 # 标识食物没有落在蛇身上，没有发生变化的话就要退出循环了
+        local index=0 # 遍历蛇身
+        while [[ -n ${snakeline[$index]} ]] ; do
+            # 如果随机生成的水果确实落在蛇身上，就要退出循环改变flag
+            if [[ $food_col -eq ${snakecol[$index]} ]] && [[ $food_line -eq ${snakeline[$index]} ]] ; then
+                flag=0
+                break
+            fi
+            ((index++))
+        done 
+
+        # flag未发生变化就认为是生成了一个好的食物，可以继续下面的操作了
+        if [[ $flag -eq 1 ]] ; then
+            break
+        fi
+    done
+
+    # 拿到了食物坐标自然就要把它绘制出来了
+    draw $food_line $food_col "$FOOD_COLOR  "
+}
+
+# 得分记录的刷新
+function refresh_score(){
+    # :param score: 玩家目前的分值
+    local score=$1
+    draw  $((window_height+1)) 1 "您的分值：$score 分"
+}
+
+# 读取按键并作出相应反应
+function read_key(){
+    # 如果没有读到按键，程序会卡在这里
+    # 所以这里设置的时间 $SPEED 可以用来控制刷新的频率
+    if read -t $SPEED -n 1 key; then
+        case $key in
+            w|W|k|K)
+                # 蛇不能按一个键就反向移动了，所以要屏蔽反向按键
+                if [[ $direction != down ]] ; then
+                    direction=up
+                fi
+                ;;
+            a|A|h|H)
+                if [[ $direction != right ]] ; then
+                    direction=left
+                fi
+                ;;
+            s|S|J|j)
+                if [[ $direction != up ]] ; then
+                    direction=down
+                fi
+                ;;
+            d|D|l|L)
+                if [[ $direction != left ]] ; then
+                    direction=right
+                fi
+                ;;
+        esac
+    fi
+}
+
+# 游戏结束的时候有个小窗口的提示
+function game_over(){
+    # 屏幕正中间告知游戏结束
+    draw  $((window_height/2)) $((window_length/2-15)) "你挂了！ 总共得分为$INIT_SCORE 分"
+
+    # 按任意键结束游戏
+    read -s -n 1 -p "按任意键结束游戏运行" 
+    clear
+    echo -ne "\e[?25h"
+    stty echo
+    exit 0
+}
+
+# 依次完成如下工作：
+## 1. 初始化参数
+## 2. 绘制游戏边界
+## 3. 绘制蛇
+## 4. 生成第一个食物
+init_game
+draw_border
+draw_snake
+random_food
+
+# 游戏主循环
+while true; do
+    read_key
+    snake_move
+    # 蛇移动了以后就会发生一些情况
+    case $? in
+        $HIT_WALL|$EAT_SELF)
+            game_over
+            ;;
+        $EAT_FOOD)
+            random_food
+            ((INIT_SCORE+=$INC_SCORE))
+            ;;
+    esac
+    refresh_score $INIT_SCORE
+done
